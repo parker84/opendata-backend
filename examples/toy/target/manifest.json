@@ -1,0 +1,39 @@
+{
+  "metadata": { "dbt_schema_version": "https://schemas.getdbt.com/dbt/manifest/v12.json", "project_name": "analytics" },
+  "nodes": {
+    "model.analytics.events": {
+      "resource_type": "model",
+      "name": "events",
+      "schema": "main",
+      "description": "One row per product event. The activity backbone.",
+      "columns": {
+        "event_id": { "name": "event_id", "data_type": "bigint", "description": "Surrogate key." },
+        "team_id": { "name": "team_id", "data_type": "integer", "description": "FK to dim_teams." },
+        "occurred_at": { "name": "occurred_at", "data_type": "timestamp", "description": "When the event happened." },
+        "event_name": { "name": "event_name", "data_type": "varchar", "description": "Event type, e.g. login." }
+      }
+    },
+    "model.analytics.dim_teams": {
+      "resource_type": "model",
+      "name": "dim_teams",
+      "schema": "main",
+      "description": "One row per team (customer account).",
+      "columns": {
+        "team_id": { "name": "team_id", "data_type": "integer", "description": "Primary key." },
+        "team_name": { "name": "team_name", "data_type": "varchar", "description": "Display name." },
+        "plan": { "name": "plan", "data_type": "varchar", "description": "free | pro | enterprise." }
+      }
+    }
+  },
+  "metrics": {
+    "metric.analytics.active_team": {
+      "name": "active_team",
+      "label": "Active Teams",
+      "description": "Distinct teams with at least one event.",
+      "meta": {
+        "owner": "@finance",
+        "opendata_sql": "SELECT count(DISTINCT team_id) AS active_teams FROM main.events"
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+name: analytics
+version: "1.0.0"
+profile: analytics
+# Toy dbt project used by `opendata init` for the offline demo.
+# The real context comes from target/manifest.json (already compiled here).
+models:
+  analytics:
+    +materialized: table
