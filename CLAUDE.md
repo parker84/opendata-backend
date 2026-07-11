@@ -32,6 +32,8 @@ for data teams.
   existing creds, `opendata init`, connector catalog, trust model.
 - [`docs/golden-sql.md`](docs/golden-sql.md) — the curation layer (golden SQL /
   metrics / joins). The compounding moat; make it *fun*.
+- [`docs/connectors.md`](docs/connectors.md) — the community connector ecosystem:
+  entry-point plugins, conformance kit, trust tiers. The other compounding moat.
 
 ## Architecture in one breath
 

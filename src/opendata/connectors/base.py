@@ -56,5 +56,9 @@ REGISTRY: list[Connector] = []
 
 
 def register(c: Connector) -> Connector:
+    """Register a connector. Idempotent by `key` so re-imports and duplicate
+    entry-points don't stack."""
+    if any(getattr(x, "key", None) == getattr(c, "key", None) for x in REGISTRY):
+        return c
     REGISTRY.append(c)
     return c
