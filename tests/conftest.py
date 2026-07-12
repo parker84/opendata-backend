@@ -24,7 +24,7 @@ def toy(tmp_path):
 
 
 @pytest.fixture(autouse=True)
-def _no_anthropic_key(monkeypatch):
-    """Keep the engine on the offline stub during tests."""
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    monkeypatch.delenv("OPENDATA_MODEL", raising=False)
+def _offline_defaults(monkeypatch):
+    """Keep the engine on the offline stub + lexical retrieval during tests."""
+    for var in ("ANTHROPIC_API_KEY", "OPENDATA_MODEL", "OPENDATA_EMBEDDINGS", "VOYAGE_API_KEY"):
+        monkeypatch.delenv(var, raising=False)

@@ -36,6 +36,8 @@ class ContextStore:
         self.tables: list[Table] = []
         self.metrics: list[Metric] = []
         self.connections: dict[str, dict] = {}
+        self.vectors: dict[str, list[float]] = {}  # "table:fqn" / "metric:name" → embedding
+        self.embedder: str = ""  # which embedder produced self.vectors
 
     # ── mutation (used by connectors' index()) ──────────────────────────────
     def add_table(self, t: Table) -> None:
@@ -62,6 +64,8 @@ class ContextStore:
                     "connections": self.connections,
                     "tables": [t.to_dict() for t in self.tables],
                     "metrics": [m.to_dict() for m in self.metrics],
+                    "embedder": self.embedder,
+                    "vectors": self.vectors,
                 },
                 indent=2,
             )
@@ -76,7 +80,43 @@ class ContextStore:
             s.connections = data.get("connections", {})
             s.tables = [Table.from_dict(d) for d in data.get("tables", [])]
             s.metrics = [Metric.from_dict(d) for d in data.get("metrics", [])]
+            s.embedder = data.get("embedder", "")
+            s.vectors = data.get("vectors", {})
         return s
+
+    # ── vector index ─────────────────────────────────────────────────────────
+    def _metric_text(self, m: Metric) -> str:
+        return f"{m.name} {m.label} {m.definition}"
+
+    def embed_catalog(self, embedder) -> int:
+        """Compute + store embeddings for every table and metric. Returns count."""
+        docs = [(f"table:{t.fqn}", self._table_text(t)) for t in self.tables]
+        docs += [(f"metric:{m.name}", self._metric_text(m)) for m in self.metrics]
+        if not docs:
+            return 0
+        vecs = embedder.embed([text for _, text in docs])
+        self.vectors = {docs[i][0]: vecs[i] for i in range(len(docs))}
+        self.embedder = getattr(embedder, "name", "unknown")
+        return len(docs)
+
+    def vector_retrieve(self, qvec: list[float], k: int = 5) -> Retrieved:
+        from .embeddings import cosine
+
+        tables = [
+            it for score, it in sorted(
+                ((cosine(qvec, self.vectors[f"table:{t.fqn}"]), t)
+                 for t in self.tables if f"table:{t.fqn}" in self.vectors),
+                key=lambda s: s[0], reverse=True,
+            )[:k] if score > 0
+        ] or self.tables[:1]
+        metrics = [
+            it for score, it in sorted(
+                ((cosine(qvec, self.vectors[f"metric:{m.name}"]), m)
+                 for m in self.metrics if f"metric:{m.name}" in self.vectors),
+                key=lambda s: s[0], reverse=True,
+            )[:k] if score > 0
+        ]
+        return Retrieved(tables=tables, metrics=metrics)
 
     # ── retrieval (lexical v0) ───────────────────────────────────────────────
     def _table_text(self, t: Table) -> str:

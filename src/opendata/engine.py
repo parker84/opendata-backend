@@ -12,6 +12,7 @@ from pathlib import Path
 
 from .config import load_config
 from .connectors import execute as wh
+from .context.retrieve import retrieve_context
 from .context.store import ContextStore
 from .golden.store import best_match, load_goldens
 from .llm.provider import get_provider
@@ -54,7 +55,7 @@ def _resolve_sql(root: Path, store: ContextStore, question: str, provider):
     if m and m.sql:
         return m.sql, f"metric:{m.name}"
 
-    retrieved = store.retrieve(question)
+    retrieved = retrieve_context(store, question)
     sql = provider.generate_sql(question, retrieved, examples=load_goldens(root))
     return sql, "generated"
 
@@ -91,7 +92,7 @@ def ask(root: Path, question: str) -> Answer:
             last_err = str(e)
             if attempt < repairs and hasattr(provider, "repair_sql"):
                 try:
-                    sql = provider.repair_sql(question, sql, last_err, store.retrieve(question))
+                    sql = provider.repair_sql(question, sql, last_err, retrieve_context(store, question))
                     continue
                 except Exception:  # noqa: BLE001 — repair itself failed; give up
                     break

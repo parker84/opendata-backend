@@ -81,10 +81,24 @@ opendata serve --path examples/toy        # http://127.0.0.1:8000
 
 `opendata ask "…" --json` gives the same machine-readable answer on the CLI.
 
+## Semantic retrieval (optional)
+
+Retrieval is lexical by default (zero deps). For semantic matching — "customers"
+finding your `teams` table, "revenue" finding `net_sales` — add embeddings:
+
+```bash
+uv pip install -e ".[embeddings]"        # local, no API key (fastembed/ONNX)
+# or: pip install voyageai && export VOYAGE_API_KEY=…   (Anthropic-recommended)
+opendata init                            # re-index; embeddings bake in automatically
+```
+
+Nothing to configure — if an embedder is available it's used, otherwise retrieval
+falls back to lexical.
+
 ## Develop
 
 ```bash
-uv pip install -e ".[dev]" && pytest      # 41 tests, all offline
+uv pip install -e ".[dev]" && pytest      # 52 tests, all offline
 ```
 
 CI (`.github/workflows/ci.yml`) runs pytest + `opendata verify` + `opendata eval`

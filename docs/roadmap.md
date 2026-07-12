@@ -39,8 +39,10 @@ gets a real, grounded answer in under two minutes. Turns the demo into a product
       `SNOWFLAKE_*` env; shared dbt-profile resolver). *(live exec needs an account.)*
 - [x] **Claude LLM provider** — real text-to-SQL behind the model-agnostic
       interface; BYO key; adaptive thinking + structured-output SQL. *(Ollama TBD.)*
-- [ ] **Embeddings retrieval** — replace the lexical stub (sqlite-vec / LanceDB).
-      *(next up)*
+- [x] **Embeddings retrieval** — pluggable embedder (Voyage / local fastembed /
+      dependency-free hashing default), vector index in the context store, cosine
+      retrieval; falls back to lexical when no embedder is configured. Installing
+      `opendata[embeddings]` turns semantic retrieval on automatically.
 - [x] **Self-repair loop** — feed DB errors back to the model, bounded retries.
 - [x] **Metric-first resolution** — reuse a defined metric's SQL when it fits.
       *(MetricFlow compilation still TBD.)*

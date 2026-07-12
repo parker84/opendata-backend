@@ -23,6 +23,8 @@ postgres = ["psycopg[binary]>=3.1"]
 snowflake = ["snowflake-connector-python>=3.7"]
 # Read-only HTTP API (opendata serve) — the transport opendata-web calls.
 server = ["fastapi>=0.110", "uvicorn>=0.29"]
+# Local semantic embeddings (no API key). Voyage users: pip install voyageai.
+embeddings = ["fastembed>=0.3"]
 # Test suite (includes the API deps so the server tests run in CI).
 dev = ["pytest>=8", "fastapi>=0.110", "httpx>=0.27"]
 

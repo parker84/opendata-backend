@@ -86,6 +86,16 @@ def init(
         summary = " · ".join(f"{v} {k}" for k, v in stats.items())
         console.print(f"[dim]⠿ indexed {r.key}: {summary}[/dim]")
 
+    from .context.embeddings import get_embedder
+
+    embedder = get_embedder()
+    if embedder:
+        try:
+            n = store.embed_catalog(embedder)
+            console.print(f"[dim]⠿ embedded {n} objects ({embedder.name})[/dim]")
+        except Exception as e:  # noqa: BLE001 — embeddings are best-effort
+            console.print(f"[yellow]⚠ embeddings skipped: {e}[/]")
+
     store.save()
     write_config(
         root,
