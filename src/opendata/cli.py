@@ -169,6 +169,24 @@ def doctor(path: Path = typer.Option(Path("."), "--path", "-p")):
 
 
 @app.command()
+def eval(path: Path = typer.Option(Path("."), "--path", "-p")):
+    """Score the answer engine against the golden set (architecture §7)."""
+    from .eval.harness import run as run_eval
+
+    report = run_eval(path)
+    if not report.cases:
+        console.print("[yellow]No goldens to evaluate.[/] Add some in .opendata/golden/.")
+        raise typer.Exit(0)
+    for c in report.cases:
+        mark = "[green]✓[/]" if c.ok else "[red]✗[/]"
+        console.print(f"  {mark} {c.question:<45} [dim]{c.detail}[/]")
+    pct = round(report.accuracy * 100)
+    color = "green" if report.accuracy == 1 else "yellow" if report.accuracy >= 0.5 else "red"
+    console.print(f"\n[{color}]accuracy: {pct}%[/]  ({sum(c.ok for c in report.cases)}/{len(report.cases)})")
+    raise typer.Exit(0 if report.accuracy == 1 else 1)
+
+
+@app.command()
 def connect(source: str = typer.Argument(..., help="e.g. posthog, looker")):
     """Add another source (stub — catalog grows here)."""
     console.print(f"[yellow]connector '{source}' not implemented yet[/] — see docs/onboarding.md §5")

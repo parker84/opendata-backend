@@ -14,6 +14,10 @@ dependencies = [
     "pyyaml>=6",
 ]
 
+[project.optional-dependencies]
+# The real Claude text-to-SQL provider (BYO key). Base install stays offline.
+llm = ["anthropic>=0.40"]
+
 [project.scripts]
 opendata = "opendata.cli:app"
 

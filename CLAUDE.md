@@ -60,6 +60,7 @@ architecture §3; code is under `src/opendata/`.
 uv venv && uv pip install -e .
 .venv/bin/opendata init  --yes --path examples/toy
 .venv/bin/opendata ask   "weekly active teams last 8 weeks" --path examples/toy
+.venv/bin/opendata eval  --path examples/toy
 .venv/bin/opendata status --path examples/toy
 .venv/bin/opendata doctor --path examples/toy
 ```
@@ -67,6 +68,14 @@ uv venv && uv pip install -e .
 `examples/toy/` is a bundled dbt manifest + DuckDB seed + a pre-seeded golden, so
 the whole detect → index → answer loop runs with no external DB and no LLM key
 (an offline `StubProvider` stands in for Claude).
+
+**Real Claude provider:** `uv pip install -e ".[llm]"` + `export ANTHROPIC_API_KEY=…`.
+`llm/provider.py` uses the Anthropic SDK — `claude-opus-4-8` by default (override
+via `OPENDATA_MODEL`), adaptive thinking, structured-output SQL, and a self-repair
+method the engine calls on execution errors (generated path only). Selection fails
+soft to the stub when the SDK/key is absent, so the offline path always works.
+`opendata eval` scores the engine against the golden set (the eval ground truth).
+When editing this provider, consult the `claude-api` skill for current SDK usage.
 
 ## Conventions
 

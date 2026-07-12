@@ -21,6 +21,7 @@ uv venv && uv pip install -e .
 
 opendata init  --yes --path examples/toy
 opendata ask   "weekly active teams last 8 weeks" --path examples/toy
+opendata eval  --path examples/toy      # score the engine vs the golden set
 opendata status --path examples/toy
 opendata doctor --path examples/toy
 ```
@@ -28,7 +29,21 @@ opendata doctor --path examples/toy
 `init` auto-detects the dbt project + warehouse, indexes schema + metrics, and
 proves it with a grounded answer. `ask` resolves **golden SQL → defined metric →
 generated SQL**, validates it (read-only + `LIMIT`), executes, and shows the SQL
-and provenance.
+and provenance. `eval` treats each golden as ground truth and reports accuracy.
+
+## Real answers with Claude
+
+The offline demo uses a stub generator (no key needed). For real text-to-SQL:
+
+```bash
+uv pip install -e ".[llm]"        # installs the Anthropic SDK
+export ANTHROPIC_API_KEY=sk-ant-… # bring your own key
+opendata ask "..." --path examples/toy
+```
+
+The provider is model-agnostic (`claude-opus-4-8` by default; set `OPENDATA_MODEL`
+to another Claude model, or `stub` to force offline). It uses adaptive thinking,
+structured-output SQL, and a bounded self-repair loop on execution errors.
 
 ## Docs
 
