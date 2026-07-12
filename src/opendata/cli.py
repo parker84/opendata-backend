@@ -20,7 +20,8 @@ from .connectors import REGISTRY
 from .connectors.base import Env
 from .context.store import ContextStore
 from .engine import ask as engine_ask
-from .golden.store import load_goldens
+from .golden.store import load_goldens, save_golden
+from .golden.verify import verify_all
 
 app = typer.Typer(add_completion=False, help="opendata — one context for your data team.")
 console = Console()
@@ -124,6 +125,43 @@ def ask(
         table.add_row(*[str(v) for v in row])
     console.print(table)
     console.print(Panel(ans.sql, title="sql", border_style="dim", expand=False))
+
+
+@app.command()
+def save(
+    question: str = typer.Argument(..., help="The question this golden answers."),
+    path: Path = typer.Option(Path("."), "--path", "-p"),
+    id: str = typer.Option(None, "--id", help="Golden id (defaults to a slug)."),
+    owner: str = typer.Option("", "--owner", help="Who owns this golden."),
+):
+    """Verify an answer and save it as a golden — reused verbatim next time."""
+    ans = engine_ask(path, question)
+    if ans.error:
+        console.print(f"[red]✗[/] won't save — {ans.error}")
+        raise typer.Exit(1)
+    expects = {"columns": ans.columns, "min_rows": 1}
+    p = save_golden(
+        Path(path).resolve(), question, ans.sql, id=id, owner=owner, expects=expects
+    )
+    note = " [dim](was already golden)[/]" if ans.provenance.startswith("golden") else ""
+    console.print(f"[green]✓[/] saved golden → {p}{note}  [dim](commit it)[/]")
+    console.print(Panel(ans.sql, title="sql", border_style="dim", expand=False))
+
+
+@app.command()
+def verify(path: Path = typer.Option(Path("."), "--path", "-p")):
+    """Re-run every golden; fail if any is broken or off-shape (CI-ready)."""
+    results = verify_all(path)
+    if not results:
+        console.print("[yellow]No goldens to verify.[/]")
+        raise typer.Exit(0)
+    failed = 0
+    for r in results:
+        mark = "[green]✓[/]" if r.ok else "[red]✗[/]"
+        console.print(f"  {mark} {r.golden.id:<28} [dim]{r.detail}[/]")
+        failed += 0 if r.ok else 1
+    console.print(f"\n{len(results) - failed}/{len(results)} goldens verified")
+    raise typer.Exit(1 if failed else 0)
 
 
 @app.command()

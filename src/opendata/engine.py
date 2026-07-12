@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .config import load_config
-from .connectors import warehouse_duckdb
+from .connectors import execute as wh
 from .context.store import ContextStore
 from .golden.store import best_match, load_goldens
 from .llm.provider import get_provider
@@ -56,8 +56,8 @@ def ask(root: Path, question: str) -> Answer:
     except Exception as e:  # noqa: BLE001
         return Answer(question=question, sql="", provenance="none", error=str(e))
 
-    wh = (cfg.get("connections", {}) or {}).get("warehouse", {"type": "duckdb"})
-    wh = {**wh, "_root": str(root)}
+    wh_cfg = (cfg.get("connections", {}) or {}).get("warehouse", {"type": "duckdb"})
+    wh_cfg = {**wh_cfg, "_root": str(root)}
 
     sql = raw_sql
     last_err = None
@@ -70,7 +70,7 @@ def ask(root: Path, question: str) -> Answer:
             last_err = str(e)
             break
         try:
-            cols, rows = warehouse_duckdb.execute(root, wh, safe_sql)
+            cols, rows = wh.execute(root, wh_cfg, safe_sql)
             return Answer(question=question, sql=safe_sql, columns=cols, rows=rows,
                           provenance=provenance)
         except Exception as e:  # noqa: BLE001

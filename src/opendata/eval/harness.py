@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from ..config import load_config
-from ..connectors import warehouse_duckdb
+from ..connectors import execute as wh
 from ..engine import ask
 from ..golden.store import load_goldens
 from ..sql.validate import validate_and_prepare
@@ -43,14 +43,14 @@ class EvalReport:
 def run(root: Path) -> EvalReport:
     root = Path(root).resolve()
     cfg = load_config(root) or {}
-    wh = {**(cfg.get("connections", {}) or {}).get("warehouse", {"type": "duckdb"}),
-          "_root": str(root)}
+    wh_cfg = {**(cfg.get("connections", {}) or {}).get("warehouse", {"type": "duckdb"}),
+              "_root": str(root)}
 
     report = EvalReport()
     for g in load_goldens(root):
         try:
             truth_sql = validate_and_prepare(g.sql, dialect="duckdb")
-            truth_cols, truth_rows = warehouse_duckdb.execute(root, wh, truth_sql)
+            truth_cols, truth_rows = wh.execute(root, wh_cfg, truth_sql)
         except Exception as e:  # noqa: BLE001 — a golden that won't run is itself a failure
             report.cases.append(CaseResult(g.id, g.question, False, f"golden won't run: {e}"))
             continue

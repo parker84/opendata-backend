@@ -30,6 +30,7 @@ class Golden:
     owner: str = ""
     status: str = "approved"
     verified_at: str = ""
+    expects: dict = field(default_factory=dict)
     path: Path | None = None
 
     def match_score(self, question: str) -> float:
@@ -59,8 +60,48 @@ def _parse(path: Path) -> Golden | None:
         owner=str(meta.get("owner", "")),
         status=str(meta.get("status", "approved")),
         verified_at=str(meta.get("verified_at", "")),
+        expects=dict(meta.get("expects", {}) or {}),
         path=path,
     )
+
+
+_SLUG = re.compile(r"[^a-z0-9]+")
+
+
+def slug(text: str) -> str:
+    return _SLUG.sub("_", text.lower()).strip("_")[:60] or "golden"
+
+
+def save_golden(
+    root: Path,
+    question: str,
+    sql: str,
+    *,
+    id: str | None = None,
+    aliases: list[str] | None = None,
+    metric: str = "",
+    owner: str = "",
+    expects: dict | None = None,
+) -> Path:
+    """Write a golden `.sql` file with YAML frontmatter. Secret-free, PR-reviewable."""
+    gid = id or slug(question)
+    d = root / ".opendata" / "golden"
+    d.mkdir(parents=True, exist_ok=True)
+    header: dict = {
+        "id": gid,
+        "question": question,
+        "aliases": aliases or [],
+        "status": "approved",
+        "owner": owner,
+    }
+    if metric:
+        header["metric"] = metric
+    if expects:
+        header["expects"] = expects
+    fm = yaml.safe_dump(header, sort_keys=False).strip()
+    p = d / f"{gid}.sql"
+    p.write_text(f"---\n{fm}\n---\n{sql.strip()}\n")
+    return p
 
 
 def load_goldens(root: Path) -> list[Golden]:
