@@ -24,6 +24,12 @@ for data teams.
   from turbopuffer + opencode: monospace, dark navy, blue-primary / red-accent
   duotone, ASCII-box components.
 
+## Roadmap
+
+Full phased build plan: [`docs/roadmap.md`](docs/roadmap.md). We're at **Phase 0
+done** (vertical slice). Next up: **Phase 1** — first real answer (Postgres +
+Claude provider + embeddings retrieval + eval harness).
+
 ## Design docs (read these first)
 
 - [`docs/architecture.md`](docs/architecture.md) — components, context-store data
