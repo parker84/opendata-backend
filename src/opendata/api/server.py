@@ -10,6 +10,7 @@ Optional dependency: `pip install "opendata[server]"`.
 # NB: no `from __future__ import annotations` here — FastAPI must see the real
 # Pydantic model class on the endpoint annotation to treat it as a request body.
 
+import os
 from pathlib import Path
 
 from .. import __version__
@@ -23,8 +24,17 @@ def create_app(root: Path):
     from fastapi import FastAPI
     from pydantic import BaseModel
 
+    from fastapi.middleware.cors import CORSMiddleware
+
     root = Path(root).resolve()
     app = FastAPI(title="opendata", version=__version__)
+
+    # Read-only local API — permissive CORS so a browser (opendata-web) can call
+    # it directly. Restrict with OPENDATA_CORS_ORIGINS="https://app.example.com,…".
+    origins = [o.strip() for o in os.getenv("OPENDATA_CORS_ORIGINS", "*").split(",")]
+    app.add_middleware(
+        CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"]
+    )
 
     class AskRequest(BaseModel):
         question: str
