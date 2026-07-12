@@ -75,7 +75,11 @@ def init(
     connections: dict[str, dict] = {}
     for c, r in ready:
         cfg = {**r.config, "_root": str(root)}
-        stats = c.index(cfg, store)
+        try:
+            stats = c.index(cfg, store)
+        except Exception as e:  # noqa: BLE001 — a bad connector shouldn't abort init
+            console.print(f"[yellow]⚠ skipped {r.key}: {e}[/]")
+            continue
         connections[_KIND_KEY.get(c.kind, c.key)] = {
             k: v for k, v in r.config.items() if not k.startswith("_")
         }

@@ -17,6 +17,10 @@ dependencies = [
 [project.optional-dependencies]
 # The real Claude text-to-SQL provider (BYO key). Base install stays offline.
 llm = ["anthropic>=0.40"]
+# Real Postgres warehouse execution (detection + GRANT work without it).
+postgres = ["psycopg[binary]>=3.1"]
+# Test suite.
+dev = ["pytest>=8"]
 
 [project.scripts]
 opendata = "opendata.cli:app"
@@ -27,3 +31,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/opendata"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
