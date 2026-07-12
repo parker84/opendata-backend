@@ -1,4 +1,4 @@
-# CLAUDE.md — opendata-backend
+# CLAUDE.md — opendata
 
 Context for Claude Code (and humans) working in this repo.
 

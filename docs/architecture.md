@@ -63,7 +63,7 @@ drivers, `sqlglot`, LLM/embedding SDKs) is Python-native.
 ## 3. Repo layout
 
 ```
-opendata-backend/
+opendata/
 ├── docs/                      # onboarding.md · architecture.md · golden-sql.md
 ├── pyproject.toml
 ├── src/opendata/
