@@ -19,6 +19,8 @@ dependencies = [
 llm = ["anthropic>=0.40"]
 # Real Postgres warehouse execution (detection + GRANT work without it).
 postgres = ["psycopg[binary]>=3.1"]
+# Real Snowflake warehouse execution (detection + GRANT work without it).
+snowflake = ["snowflake-connector-python>=3.7"]
 # Read-only HTTP API (opendata serve) — the transport opendata-web calls.
 server = ["fastapi>=0.110", "uvicorn>=0.29"]
 # Test suite (includes the API deps so the server tests run in CI).

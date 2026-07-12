@@ -17,7 +17,12 @@ from __future__ import annotations
 
 from importlib.metadata import entry_points
 
-from . import dbt_core, warehouse_duckdb, warehouse_postgres  # noqa: F401  self-register
+from . import (  # noqa: F401  built-ins self-register
+    dbt_core,
+    warehouse_duckdb,
+    warehouse_postgres,
+    warehouse_snowflake,
+)
 from .base import REGISTRY, Connector, DetectResult, Env, HealthCheck, register
 
 __all__ = ["REGISTRY", "Connector", "DetectResult", "Env", "HealthCheck", "register"]

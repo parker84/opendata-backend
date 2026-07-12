@@ -13,71 +13,31 @@ Detection and the GRANT generator work without it; connect/index/execute need it
 from __future__ import annotations
 
 import os
-import re
-from pathlib import Path
 from typing import Optional
 from urllib.parse import unquote, urlparse
 
-import yaml
-
 from ..context.models import Column, Table
 from .base import DetectResult, Env, HealthCheck, register
-
-_ENV_VAR = re.compile(r"\{\{\s*env_var\(\s*['\"]([^'\"]+)['\"]\s*(?:,\s*['\"]([^'\"]*)['\"]\s*)?\)\s*\}\}")
-
-
-def _interp(value, environ: dict):
-    """Resolve dbt-style {{ env_var('X', 'default') }} in a profile value."""
-    if not isinstance(value, str):
-        return value
-    return _ENV_VAR.sub(lambda m: environ.get(m.group(1), m.group(2) or ""), value)
+from .dbt_profiles import interp as _interp  # re-exported for tests
+from .dbt_profiles import load_output
 
 
-def _profiles_path(environ: dict) -> Path:
-    base = environ.get("DBT_PROFILES_DIR") or str(Path.home() / ".dbt")
-    return Path(base) / "profiles.yml"
-
-
-def _dbt_profile_name(root: Path) -> Optional[str]:
-    proj = root / "dbt_project.yml"
-    if not proj.exists():
+def _resolve_from_dbt(root, environ: dict) -> Optional[dict]:
+    found = load_output(root, environ, ("postgres", "postgresql"))
+    if not found:
         return None
-    try:
-        data = yaml.safe_load(proj.read_text()) or {}
-    except Exception:  # noqa: BLE001
-        return None
-    return data.get("profile")
-
-
-def _resolve_from_dbt(root: Path, environ: dict) -> Optional[dict]:
-    name = _dbt_profile_name(root)
-    p = _profiles_path(environ)
-    if not name or not p.exists():
-        return None
-    try:
-        profiles = yaml.safe_load(p.read_text()) or {}
-    except Exception:  # noqa: BLE001
-        return None
-    prof = profiles.get(name)
-    if not isinstance(prof, dict):
-        return None
-    target = prof.get("target")
-    output = (prof.get("outputs") or {}).get(target)
-    if not isinstance(output, dict):
-        return None
-    if str(output.get("type", "")).lower() not in ("postgres", "postgresql"):
-        return None
+    o = found["output"]
     return {
         "type": "postgres",
         "source": "dbt",
-        "profile": name,
-        "target": target,
-        "host": _interp(output.get("host", "localhost"), environ),
-        "port": int(_interp(output.get("port", 5432), environ) or 5432),
-        "user": _interp(output.get("user", ""), environ),
-        "password": _interp(output.get("password", ""), environ),
-        "dbname": _interp(output.get("dbname") or output.get("database", ""), environ),
-        "schema": _interp(output.get("schema", "public"), environ),
+        "profile": found["profile"],
+        "target": found["target"],
+        "host": o.get("host", "localhost"),
+        "port": int(o.get("port", 5432) or 5432),
+        "user": o.get("user", ""),
+        "password": o.get("password", ""),
+        "dbname": o.get("dbname") or o.get("database", ""),
+        "schema": o.get("schema", "public"),
     }
 
 

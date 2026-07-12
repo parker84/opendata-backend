@@ -49,12 +49,19 @@ structured-output SQL, and a bounded self-repair loop on execution errors.
 
 ## Connect a real warehouse
 
-`opendata init` auto-detects Postgres from `DATABASE_URL` or the dbt profile named
-in your `dbt_project.yml` (`~/.dbt/profiles.yml`). Install the driver and connect:
+`opendata init` auto-detects your warehouse from the dbt profile named in
+`dbt_project.yml` (`~/.dbt/profiles.yml`) or from env vars — **Postgres** and
+**Snowflake** today. Install the matching driver and connect:
 
 ```bash
+# Postgres
 uv pip install -e ".[postgres]"
 export DATABASE_URL=postgresql://readonly_user:…@host:5432/analytics
+
+# Snowflake (or reuse your dbt profile — no env vars needed)
+uv pip install -e ".[snowflake]"
+export SNOWFLAKE_ACCOUNT=xy12345.us-east-1 SNOWFLAKE_USER=… SNOWFLAKE_PASSWORD=…
+
 opendata init            # detects your warehouse + dbt project
 opendata doctor          # prints a least-privilege GRANT to paste if needed
 ```

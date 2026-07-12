@@ -13,7 +13,7 @@ REPO = Path(__file__).resolve().parents[1]
 
 def test_registry_has_builtins_and_dedupes():
     keys = [c.key for c in REGISTRY]
-    assert {"dbt_core", "duckdb", "postgres"} <= set(keys)
+    assert {"dbt_core", "duckdb", "postgres", "snowflake"} <= set(keys)
     # register is idempotent by key
     before = len(REGISTRY)
     register(PostgresWarehouseConnector())
@@ -67,3 +67,89 @@ def test_env_var_interpolation():
     assert _interp("{{ env_var('PGHOST') }}", {"PGHOST": "h1"}) == "h1"
     assert _interp("{{ env_var('MISSING', 'fallback') }}", {}) == "fallback"
     assert _interp("literal", {}) == "literal"
+
+
+# ── Snowflake ────────────────────────────────────────────────────────────────
+
+SNOWFLAKE_PROFILE = """
+analytics:
+  target: prod
+  outputs:
+    prod:
+      type: snowflake
+      account: xy12345.us-east-1
+      user: svc
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: TRANSFORMER
+      database: ANALYTICS
+      warehouse: COMPUTE_WH
+      schema: PUBLIC
+"""
+
+
+def test_snowflake_detect_from_env():
+    from opendata.connectors.warehouse_snowflake import SnowflakeWarehouseConnector
+
+    c = SnowflakeWarehouseConnector()
+    env = Env(root=Path("/does-not-exist"), environ={
+        "SNOWFLAKE_ACCOUNT": "ab12345", "SNOWFLAKE_USER": "me",
+        "SNOWFLAKE_DATABASE": "DB", "SNOWFLAKE_WAREHOUSE": "WH",
+    })
+    r = c.detect(env)
+    assert r is not None
+    assert r.config["account"] == "ab12345"
+    assert r.config["database"] == "DB"
+    assert "password" not in r.config
+    assert r.config["secret_ref"] == "env:SNOWFLAKE_PASSWORD"
+
+
+def test_snowflake_detect_from_dbt_profile(tmp_path):
+    from opendata.connectors.warehouse_snowflake import (
+        SnowflakeWarehouseConnector,
+        resolve,
+    )
+
+    (tmp_path / "dbt_project.yml").write_text("name: analytics\nprofile: analytics\n")
+    prof = tmp_path / "dbtprof"
+    prof.mkdir()
+    (prof / "profiles.yml").write_text(SNOWFLAKE_PROFILE)
+    env = Env(root=tmp_path, environ={
+        "DBT_PROFILES_DIR": str(prof), "SNOWFLAKE_PASSWORD": "sekret",
+    })
+
+    r = SnowflakeWarehouseConnector().detect(env)
+    assert r is not None
+    assert r.config["account"] == "xy12345.us-east-1"
+    assert r.config["database"] == "ANALYTICS"
+    assert r.config["warehouse"] == "COMPUTE_WH"
+    assert "password" not in r.config
+    assert r.config["secret_ref"] == "dbt:profiles.yml"
+    # env_var interpolation resolves the real password (not stored in cfg)
+    assert resolve(env)["password"] == "sekret"
+
+
+def test_snowflake_grant_sql_is_read_only():
+    from opendata.connectors.warehouse_snowflake import SnowflakeWarehouseConnector
+
+    g = SnowflakeWarehouseConnector().grant_sql({"database": "ANALYTICS", "warehouse": "WH"})
+    assert "CREATE ROLE IF NOT EXISTS OPENDATA_RO" in g
+    assert "GRANT SELECT ON ALL TABLES IN DATABASE ANALYTICS" in g
+    for forbidden in ("INSERT", "UPDATE", "DELETE"):
+        assert forbidden not in g
+
+
+def test_dbt_profiles_load_output(tmp_path):
+    from opendata.connectors.dbt_profiles import load_output
+
+    (tmp_path / "dbt_project.yml").write_text("profile: proj\n")
+    pd = tmp_path / "p"
+    pd.mkdir()
+    (pd / "profiles.yml").write_text(
+        "proj:\n  target: dev\n  outputs:\n    dev:\n"
+        "      type: postgres\n      host: h\n"
+    )
+    env = {"DBT_PROFILES_DIR": str(pd)}
+    out = load_output(tmp_path, env, ("postgres",))
+    assert out["output"]["host"] == "h"
+    assert out["target"] == "dev"
+    assert load_output(tmp_path, env, ("snowflake",)) is None

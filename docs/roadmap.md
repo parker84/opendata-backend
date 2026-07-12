@@ -35,7 +35,8 @@ gets a real, grounded answer in under two minutes. Turns the demo into a product
 - [x] **Postgres connector** — detect from `~/.dbt/profiles.yml` / `DATABASE_URL`;
       read-only execute + least-privilege `GRANT` generator. *(live PG exec pending
       a test database; detection/GRANT covered by tests.)*
-- [ ] **Snowflake connector** + `GRANT` generator (onboarding §6).
+- [x] **Snowflake connector** + role `GRANT` generator (detect from dbt profile /
+      `SNOWFLAKE_*` env; shared dbt-profile resolver). *(live exec needs an account.)*
 - [x] **Claude LLM provider** — real text-to-SQL behind the model-agnostic
       interface; BYO key; adaptive thinking + structured-output SQL. *(Ollama TBD.)*
 - [ ] **Embeddings retrieval** — replace the lexical stub (sqlite-vec / LanceDB).

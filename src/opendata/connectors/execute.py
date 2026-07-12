@@ -22,4 +22,8 @@ def execute(root: Path, cfg: dict, sql: str) -> tuple[list[str], list[tuple]]:
         from . import warehouse_postgres
 
         return warehouse_postgres.execute(cfg, sql)
+    if kind == "snowflake":
+        from . import warehouse_snowflake
+
+        return warehouse_snowflake.execute(cfg, sql)
     raise ValueError(f"unknown warehouse type: {kind!r}")
