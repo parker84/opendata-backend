@@ -32,20 +32,24 @@ offline on `examples/toy`. *This is where we are.*
 gets a real, grounded answer in under two minutes. Turns the demo into a product.
 
 **Deliverables**
-- [ ] **Postgres connector** — detect from `~/.dbt/profiles.yml` / `DATABASE_URL`;
-      read-only execute. (Most common, easiest — do first.)
-- [ ] **Snowflake connector** + the read-only **`GRANT` generator** (onboarding §6).
-- [ ] **Claude LLM provider** — real text-to-SQL behind the model-agnostic
-      interface; BYO API key; Ollama option for fully-local.
-- [ ] **Embeddings retrieval** — replace the lexical stub (sqlite-vec / LanceDB);
-      embed schema, metrics, goldens, and past queries.
-- [ ] **Self-repair loop** — feed SQL/DB errors back to the model, bounded retries.
-- [ ] **Metric-first compilation** — resolve to dbt metrics via MetricFlow /
-      Semantic Layer instead of hand-written SQL when a metric exists.
+- [x] **Postgres connector** — detect from `~/.dbt/profiles.yml` / `DATABASE_URL`;
+      read-only execute + least-privilege `GRANT` generator. *(live PG exec pending
+      a test database; detection/GRANT covered by tests.)*
+- [ ] **Snowflake connector** + `GRANT` generator (onboarding §6).
+- [x] **Claude LLM provider** — real text-to-SQL behind the model-agnostic
+      interface; BYO key; adaptive thinking + structured-output SQL. *(Ollama TBD.)*
+- [ ] **Embeddings retrieval** — replace the lexical stub (sqlite-vec / LanceDB).
+      *(next up)*
+- [x] **Self-repair loop** — feed DB errors back to the model, bounded retries.
+- [x] **Metric-first resolution** — reuse a defined metric's SQL when it fits.
+      *(MetricFlow compilation still TBD.)*
 - [ ] **Query-history ingestion** — pull warehouse history as "past analysis".
-- [ ] **Golden capture** — inline "save as golden" after an ask; `opendata verify`.
-- [ ] **Eval harness v1** — `opendata eval` scores the engine against the golden
-      set (result / shape / execution). Accuracy is a tracked number from day one.
+- [x] **Golden capture + verify** — `opendata save` writes a golden; `opendata
+      verify` re-runs all goldens with shape checks (staleness detection).
+- [x] **Eval harness v1** — `opendata eval` scores the engine against the golden
+      set (result / shape / execution); non-zero exit on regression.
+- [x] **Multi-warehouse execution dispatch** + a 37-test pytest suite + GitHub
+      Actions CI (pytest + `verify` + `eval` gates).
 
 **Exit criteria:** 5–10 design partners hit **TTFGA < 2 min** on their *own* stack;
 baseline accuracy measured and trending up.

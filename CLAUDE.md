@@ -89,8 +89,19 @@ When editing this provider, consult the `claude-api` skill for current SDK usage
 - **Correctness is measured.** The golden set doubles as the eval set; treat the
   answer engine as an experiment surface (see architecture §7).
 
+## Testing
+
+`pip install -e ".[dev]" && pytest` — 37 tests (SQL guard, golden match/save/verify,
+context store, connector detect + GRANT, engine golden/metric/generated paths,
+eval accuracy, provider gating). GitHub Actions CI (`.github/workflows/ci.yml`)
+runs pytest + `opendata verify` + `opendata eval` on every push/PR. The `toy`
+pytest fixture `init`s a hermetic copy of `examples/toy`.
+
 ## Status
 
-v0.1 vertical slice runs end-to-end on the toy fixture. Next: real warehouse
-connectors (Postgres/Snowflake), a Claude provider, embeddings-based retrieval,
-the eval harness, and the FastAPI server for `opendata-web`.
+Phase 1 largely done: multi-warehouse execution dispatch (`connectors/execute.py`),
+**Postgres** connector (detect from `DATABASE_URL`/dbt profiles, GRANT generator;
+live exec needs a DB), **Claude** provider + self-repair, **golden lifecycle**
+(`save`/`verify`), **eval harness**, tests + CI. Next (see `docs/roadmap.md`):
+embeddings retrieval, Snowflake, query-history ingestion, then the FastAPI server
+for `opendata-web`.
