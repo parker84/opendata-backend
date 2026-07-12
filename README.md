@@ -62,10 +62,22 @@ opendata doctor          # prints a least-privilege GRANT to paste if needed
 Execution is read-only, enforced at parse time. Connection config stores a
 secret *reference*, never the password.
 
+## Serve the API
+
+A read-only HTTP API — the transport `opendata-web` (and agents) call:
+
+```bash
+uv pip install -e ".[server]"
+opendata serve --path examples/toy        # http://127.0.0.1:8000
+# GET /health · GET /status · POST /ask {"question": "..."}
+```
+
+`opendata ask "…" --json` gives the same machine-readable answer on the CLI.
+
 ## Develop
 
 ```bash
-uv pip install -e ".[dev]" && pytest      # 37 tests, all offline
+uv pip install -e ".[dev]" && pytest      # 41 tests, all offline
 ```
 
 CI (`.github/workflows/ci.yml`) runs pytest + `opendata verify` + `opendata eval`

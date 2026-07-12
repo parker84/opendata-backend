@@ -20,6 +20,10 @@ from .sql.validate import UnsafeSQL, validate_and_prepare
 MAX_REPAIRS = 1
 
 
+def _jsonable(v):
+    return v if isinstance(v, (str, int, float, bool, type(None))) else str(v)
+
+
 @dataclass
 class Answer:
     question: str
@@ -28,6 +32,16 @@ class Answer:
     rows: list[tuple] = field(default_factory=list)
     provenance: str = ""  # "golden:…" / "metric:…" / "generated"
     error: str | None = None
+
+    def to_dict(self) -> dict:
+        return {
+            "question": self.question,
+            "sql": self.sql,
+            "columns": self.columns,
+            "rows": [[_jsonable(c) for c in row] for row in self.rows],
+            "provenance": self.provenance,
+            "error": self.error,
+        }
 
 
 def _resolve_sql(root: Path, store: ContextStore, question: str, provider):

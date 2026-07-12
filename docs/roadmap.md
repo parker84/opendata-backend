@@ -85,7 +85,8 @@ connector" list drawing external PRs.
 **Goal:** single-player golden SQL becomes multiplayer; first revenue.
 
 **Deliverables**
-- [ ] **FastAPI server** — same engine, HTTP transport.
+- [x] **FastAPI server** — same engine, HTTP transport (`opendata serve`:
+      `/health`, `/status`, `/ask`). Read-only; the transport `opendata-web` calls.
 - [ ] **Hosted context store** on object storage + **always-on indexing**.
 - [ ] **Web workspace** in `opendata-web` — ask UI, shared golden library, lineage
       (the app, not just the marketing site).

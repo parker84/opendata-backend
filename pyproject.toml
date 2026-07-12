@@ -19,8 +19,10 @@ dependencies = [
 llm = ["anthropic>=0.40"]
 # Real Postgres warehouse execution (detection + GRANT work without it).
 postgres = ["psycopg[binary]>=3.1"]
-# Test suite.
-dev = ["pytest>=8"]
+# Read-only HTTP API (opendata serve) — the transport opendata-web calls.
+server = ["fastapi>=0.110", "uvicorn>=0.29"]
+# Test suite (includes the API deps so the server tests run in CI).
+dev = ["pytest>=8", "fastapi>=0.110", "httpx>=0.27"]
 
 [project.scripts]
 opendata = "opendata.cli:app"

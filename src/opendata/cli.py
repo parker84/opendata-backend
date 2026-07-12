@@ -110,9 +110,15 @@ def init(
 def ask(
     question: str = typer.Argument(..., help="A question in plain language."),
     path: Path = typer.Option(Path("."), "--path", "-p"),
+    json_out: bool = typer.Option(False, "--json", help="Emit machine-readable JSON."),
 ):
     """Answer a question grounded in your connected context."""
     ans = engine_ask(path, question)
+    if json_out:
+        import json
+
+        console.print_json(json.dumps(ans.to_dict()))
+        raise typer.Exit(0 if ans.error is None else 1)
     if ans.error:
         console.print(f"[red]✗[/] {ans.error}")
         if ans.sql:
@@ -226,6 +232,22 @@ def eval(path: Path = typer.Option(Path("."), "--path", "-p")):
     color = "green" if report.accuracy == 1 else "yellow" if report.accuracy >= 0.5 else "red"
     console.print(f"\n[{color}]accuracy: {pct}%[/]  ({sum(c.ok for c in report.cases)}/{len(report.cases)})")
     raise typer.Exit(0 if report.accuracy == 1 else 1)
+
+
+@app.command()
+def serve(
+    path: Path = typer.Option(Path("."), "--path", "-p"),
+    host: str = typer.Option("127.0.0.1", "--host"),
+    port: int = typer.Option(8000, "--port"),
+):
+    """Serve the read-only HTTP API (needs the [server] extra)."""
+    try:
+        from .api.server import serve as _serve
+    except ImportError:
+        console.print("[red]Install the server extra:[/] pip install 'opendata[server]'")
+        raise typer.Exit(1)
+    console.print(f"[green]opendata[/] serving {Path(path).resolve()} at http://{host}:{port}")
+    _serve(Path(path).resolve(), host=host, port=port)
 
 
 @app.command()
